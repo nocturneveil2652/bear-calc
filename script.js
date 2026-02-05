@@ -5,14 +5,20 @@ function it() {
     const tiers = ["T7","T8","T9","T10","T11"];
     document.querySelectorAll('[id^="fc"]').forEach(s => { fcs.forEach(f => s.add(new Option("FC "+f,f))); });
     document.querySelectorAll('select[id^="t"]').forEach(s => { tiers.forEach(t => s.add(new Option(t,t))); });
-    document.querySelectorAll('[id^="fc"]').forEach(s => s.value = "4");
-    document.querySelectorAll('select[id^="t"]').forEach(s => s.value = "T10");
+    setDefault("4", "T10");
     sy();
 }
 
+function setDefault(fcVal, tVal) {
+    document.querySelectorAll('[id^="fc"]').forEach(s => { s.value = fcVal; });
+    document.querySelectorAll('select[id^="t"]').forEach(s => { s.value = tVal; });
+}
+
 function toggleEdition() {
-    document.body.classList.toggle('junk-theme');
-    document.getElementById('editionLabel').innerText = document.body.classList.contains('junk-theme') ? "じゃんくedition" : "るびぃedition";
+    const b = document.body;
+    const label = document.getElementById('editionLabel');
+    b.classList.toggle('junk-theme');
+    label.innerText = b.classList.contains('junk-theme') ? "じゃんくedition" : "るびぃedition";
     calc();
 }
 
@@ -61,14 +67,18 @@ function calc() {
     
     const process = (row, key, atkId, kilId) => {
         const fc = document.getElementById('fc'+row).value, t = document.getElementById('t'+row).value,
-              b = (SOLDIER_DATA[key][fc] && SOLDIER_DATA[key][fc][t]) ? SOLDIER_DATA[key][fc][t] : SOLDIER_DATA[key]["なし"][t],
+              b = (D[key][fc] && D[key][fc][t]) ? D[key][fc][t] : D[key]["なし"][t],
               a = parseFloat(document.getElementById(atkId).value)||0, k = parseFloat(document.getElementById(kilId).value)||0;
+        
         const base = b[0] * b[1];
-        const coeff = base * (1 + a/100) * (1 + k/100);
+        const fA = (1 + a/100), fK = (1 + k/100);
+        const coeff = base * fA * fK;
         const damage = Math.sqrt(cur[row.toUpperCase()]) * coeff;
-        lb += `${key}(${t}/${fc}): ${b[0]}×${b[1]}=${base}\n`;
-        lc += `${key}: 係数:${coeff.toFixed(1)}\n`;
-        ld += `${key}: ${Math.floor(damage).toLocaleString()}\n`;
+        
+        lb += `${key}(${t}/${fc}): 攻${b[0]} × 守${b[1]} = ${base}\n`;
+        lc += `${key}: ${base} × 攻${fA.toFixed(2)} × 殺${fK.toFixed(2)} = 係数:${coeff.toFixed(1)}\n`;
+        ld += `${key}: √${cur[row.toUpperCase()].toLocaleString()} × ${coeff.toFixed(1)} = ${Math.floor(damage).toLocaleString()}\n`;
+        
         return {dmg: damage, m: coeff};
     };
 
@@ -80,6 +90,8 @@ function calc() {
     if(sQ>0) {
         const pI = Math.round(rI.m**2/sQ*100), pL = Math.round(rL.m**2/sQ*100), pA = 100 - pI - pL;
         document.getElementById('bT').innerText = `推奨: 盾${pI}% 槍${pL}% 弓${pA}%`;
+        const bDmg = (Math.sqrt(tot * pI/100) * rI.m) + (Math.sqrt(tot * pL/100) * rL.m) + (Math.sqrt(tot * pA/100) * rA.m);
+        document.getElementById('bDMG').innerText = `推奨時の推定ダメ: ${Math.floor(bDmg).toLocaleString()}`;
     }
 }
 
@@ -88,4 +100,4 @@ function rs() {
     document.getElementById('iI').value=33; document.getElementById('iL').value=33; document.getElementById('iA').value=34;
     document.getElementById('tr').value=100000; sy();
 }
-window.onload = it;
+it();
